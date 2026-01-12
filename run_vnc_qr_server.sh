@@ -35,10 +35,25 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Installing pyVNC library..."
+# First, make sure numpy is properly installed in our environment
+$PIP_PATH install --upgrade numpy
+if [ $? -ne 0 ]; then
+    echo "⚠️ Warning: Failed to upgrade numpy"
+fi
+
+# Install pyVNC
 $PIP_PATH install -e ./pyVNC/
 if [ $? -ne 0 ]; then
     echo "❌ Failed to install pyVNC!"
     exit 1
+fi
+
+echo "Testing pyVNC import..."
+$PYTHON_PATH -c "from pyVNC.Client import Client; print('✓ pyVNC import test successful')" 2>/dev/null
+if [ $? -ne 0 ]; then
+    echo "⚠️ Warning: pyVNC import test failed - VNC functionality may be limited"
+    echo "Run 'python debug_vnc_imports.py' for detailed diagnostics"
+    echo "The application will start with QR code functionality only"
 fi
 
 # Start the application

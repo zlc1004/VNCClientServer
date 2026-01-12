@@ -152,6 +152,12 @@ class PygameVNCQRApp:
         url_value_rect = url_value.get_rect(center=(center_x, center_y + 240))
         self.screen.blit(url_value, url_value_rect)
 
+        # Show VNC status if import failed
+        if not hasattr(self.vnc_connector, 'vnc_available') or not self.vnc_connector.vnc_available:
+            vnc_warning = self.text_font.render("⚠️ VNC functionality limited - pyVNC import failed", True, self.RED)
+            vnc_warning_rect = vnc_warning.get_rect(center=(center_x, center_y + 280))
+            self.screen.blit(vnc_warning, vnc_warning_rect)
+
         # Draw status
         status_color = self.GREEN if "connected" in self.status_text.lower() else self.BLACK
         status = self.text_font.render(f"Status: {self.status_text}", True, status_color)
