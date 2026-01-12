@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VNC QR Server - Control</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(52, 73, 94, 0.8);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #ecf0f1;
+        }
+
+        .header .ip-info {
+            font-size: 1.2em;
+            color: #bdc3c7;
+            background: rgba(44, 62, 80, 0.8);
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+
+        .section {
+            background: rgba(44, 62, 80, 0.6);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            color: #3498db;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ecf0f1;
+            font-weight: 500;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #7f8c8d;
+            border-radius: 5px;
+            background: rgba(236, 240, 241, 0.1);
+            color: white;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="number"]:focus,
+        .form-group input[type="password"]:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+            cursor: pointer;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .saved-servers {
+            margin-top: 20px;
+        }
+
+        .server-item {
+            background: rgba(44, 62, 80, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .server-info {
+            flex: 1;
+        }
+
+        .server-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: rgba(39, 174, 96, 0.2);
+            border-left: 4px solid #27ae60;
+            color: #2ecc71;
+        }
+
+        .alert-error {
+            background: rgba(231, 76, 60, 0.2);
+            border-left: 4px solid #e74c3c;
+            color: #e74c3c;
+        }
+
+        .qr-info {
+            text-align: center;
+            background: rgba(44, 62, 80, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .qr-info h3 {
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+
+        .qr-code {
+            margin: 20px 0;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .server-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .server-actions {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🖥️ VNC Remote Control</h1>
+            <div class="ip-info">
+                Connected to: {{ local_ip }}:8080
+            </div>
+        </div>
+
+        <!-- Connection Status -->
+        <div id="connectionStatus" class="section">
+            <div id="statusDisplay" class="alert alert-info">
+                Ready to connect
+            </div>
+        </div>
+
+        <!-- VNC Connection Section -->
+        <div class="section" id="vncSection">
+            <h2>🔗 Connect to VNC Server</h2>
+            <form id="vncForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vncIp">IP Address *</label>
+                        <input type="text" id="vncIp" name="ip" placeholder="192.168.1.100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="vncPort">Port *</label>
+                        <input type="number" id="vncPort" name="port" value="5900" min="1" max="65535" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vncUsername">Username *</label>
+                        <input type="text" id="vncUsername" name="username" placeholder="admin" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="vncPassword">Password</label>
+                        <input type="password" id="vncPassword" name="password" placeholder="Optional">
+                    </div>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="saveServer" name="saveServer">
+                    <label for="saveServer">Save this server configuration</label>
+                </div>
+                <div class="button-group">
+                    <button type="submit" class="btn btn-success" id="connectBtn">🚀 Connect to VNC</button>
+                    <button type="button" class="btn btn-danger" id="disconnectBtn" onclick="disconnectVNC()" style="display: none;">❌ Disconnect</button>
+                </div>
+            </form>
+
+            <!-- Saved Servers -->
+            <div class="saved-servers" id="savedServers">
+                <h3>💾 Saved Servers</h3>
+                <div id="savedServersList">
+                    {% for server in saved_servers %}
+                    <div class="server-item">
+                        <div class="server-info">
+                            <strong>{{ server.ip }}:{{ server.port }}</strong><br>
+                            <small>Username: {{ server.username }}</small>
+                        </div>
+                        <div class="server-actions">
+                            <button class="btn btn-primary btn-sm" onclick="loadServer('{{ server.ip }}', {{ server.port }}, '{{ server.username }}')">📥 Load</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteServer('{{ server.ip }}', {{ server.port }})">🗑️ Delete</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Connected State -->
+        <div class="section" id="connectedSection" style="display: none;">
+            <h2>🖥️ VNC Connected</h2>
+            <div class="alert alert-success">
+                <strong>VNC session is active on the desktop!</strong><br>
+                Use the desktop application to interact with the remote computer.
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn btn-danger" onclick="disconnectVNC()">❌ Disconnect VNC</button>
+            </div>
+        </div>
+
+        <!-- Status Section -->
+        <div id="statusAlert" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Initialize WebSocket connection
+        const socket = io();
+        let isConnected = false;
+
+        // WebSocket event handlers
+        socket.on('connect', function() {
+            console.log('Connected to server');
+            updateStatus('Connected to VNC server', 'success');
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Disconnected from server');
+            updateStatus('Disconnected from server', 'error');
+        });
+
+        socket.on('vnc_status', function(data) {
+            console.log('VNC status:', data);
+            handleVNCStatus(data.status, data.error);
+        });
+
+        // VNC Connection Form Handler
+        document.getElementById('vncForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const data = {
+                ip: formData.get('ip'),
+                port: parseInt(formData.get('port')),
+                username: formData.get('username'),
+                password: formData.get('password'),
+                save_server: formData.has('saveServer')
+            };
+
+            // Show connecting status
+            updateStatus('Connecting to VNC...', 'info');
+            document.getElementById('connectBtn').disabled = true;
+
+            // Send VNC connection request via WebSocket
+            socket.emit('vnc_connect', data);
+        });
+
+        // Handle VNC status updates
+        function handleVNCStatus(status, error) {
+            switch(status) {
+                case 'connected':
+                    updateStatus('VNC connected successfully!', 'success');
+                    showConnectedState();
+                    break;
+                case 'failed':
+                    updateStatus(error || 'VNC connection failed', 'error');
+                    showDisconnectedState();
+                    break;
+                case 'disconnected':
+                    updateStatus('VNC disconnected', 'info');
+                    showDisconnectedState();
+                    break;
+            }
+        }
+
+        // Show connected state
+        function showConnectedState() {
+            isConnected = true;
+            document.getElementById('vncSection').style.display = 'none';
+            document.getElementById('connectedSection').style.display = 'block';
+        }
+
+        // Show disconnected state
+        function showDisconnectedState() {
+            isConnected = false;
+            document.getElementById('vncSection').style.display = 'block';
+            document.getElementById('connectedSection').style.display = 'none';
+            document.getElementById('connectBtn').disabled = false;
+        }
+
+        // Disconnect VNC
+        function disconnectVNC() {
+            updateStatus('Disconnecting...', 'info');
+            socket.emit('vnc_disconnect');
+        }
+
+        // Load server details into form
+        function loadServer(ip, port, username) {
+            document.getElementById('vncIp').value = ip;
+            document.getElementById('vncPort').value = port;
+            document.getElementById('vncUsername').value = username;
+            document.getElementById('vncPassword').value = '';
+
+            updateStatus('Server details loaded', 'success');
+        }
+
+        // Delete saved server
+        async function deleteServer(ip, port) {
+            if (!confirm(`Delete server ${ip}:${port}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/servers', {
+                    method: 'DELETE',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ip: ip, port: port})
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    updateStatus('Server deleted successfully!', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    updateStatus('Failed to delete server', 'error');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                updateStatus('Error deleting server: ' + error.message, 'error');
+            }
+        }
+
+        // Update status display
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('statusDisplay');
+            statusDiv.className = `alert alert-${type}`;
+            statusDiv.textContent = message;
+
+            // Auto-clear success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    if (statusDiv.textContent === message) {
+                        statusDiv.className = 'alert alert-info';
+                        statusDiv.textContent = isConnected ? 'VNC Connected' : 'Ready to connect';
+                    }
+                }, 3000);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus('Ready to connect', 'info');
+        });
+    </script>
+</body>
+</html>
