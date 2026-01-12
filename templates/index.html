@@ -300,6 +300,7 @@
                 <div class="button-group">
                     <button type="submit" class="btn btn-success" id="connectBtn">🚀 Connect to VNC</button>
                     <button type="button" class="btn btn-danger" id="disconnectBtn" onclick="disconnectVNC()" style="display: none;">❌ Disconnect</button>
+                    <button type="button" class="btn btn-secondary" onclick="shutdownServer()">🔴 Shutdown Server</button>
                 </div>
             </form>
 
@@ -332,6 +333,7 @@
             </div>
             <div class="button-group">
                 <button type="button" class="btn btn-danger" onclick="disconnectVNC()">❌ Disconnect VNC</button>
+                <button type="button" class="btn btn-secondary" onclick="shutdownServer()">🔴 Shutdown Server</button>
             </div>
         </div>
 
@@ -472,6 +474,20 @@
                         statusDiv.textContent = isConnected ? 'VNC Connected' : 'Ready to connect';
                     }
                 }, 3000);
+            }
+        }
+
+        // Shutdown server
+        function shutdownServer() {
+            if (confirm('Are you sure you want to shutdown the VNC QR Server? This will close the desktop application.')) {
+                updateStatus('Shutting down server...', 'warning');
+                socket.emit('shutdown_server');
+
+                // Disable all buttons to prevent further actions
+                setTimeout(() => {
+                    document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+                    updateStatus('Server shutdown initiated. You can close this window.', 'info');
+                }, 1000);
             }
         }
 

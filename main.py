@@ -39,6 +39,17 @@ def main():
         # Create and run GUI application
         print("Creating GUI application...")
         app = VNCQRApp(config_manager, web_server)
+
+        # Set shutdown callback for graceful shutdown from web interface
+        def shutdown_application():
+            print("Shutdown requested from web interface")
+            if hasattr(app, 'root') and app.root:
+                app.root.quit()  # Close GUI
+                app.root.destroy()
+            sys.exit(0)
+
+        web_server.set_shutdown_callback(shutdown_application)
+
         print("Starting GUI...")
         app.run()
 

@@ -18,6 +18,10 @@ class WebServer:
         """Set callback function for VNC connections."""
         self.vnc_callback = callback
 
+    def set_shutdown_callback(self, callback):
+        """Set callback function for server shutdown."""
+        self.shutdown_callback = callback
+
     def setup_routes(self):
         """Setup Flask routes."""
 
@@ -96,6 +100,27 @@ class WebServer:
             if self.vnc_callback:
                 self.vnc_callback(None)  # None means disconnect
                 emit('vnc_status', {'status': 'disconnected'})
+
+        @self.socketio.on('shutdown_server')
+        def handle_shutdown_server():
+            """Handle server shutdown request."""
+            print("Server shutdown requested from web interface")
+            emit('shutdown_status', {'status': 'shutting_down'})
+
+            # Schedule shutdown after a brief delay to allow response to be sent
+            def delayed_shutdown():
+                import time
+                time.sleep(2)  # Give time for the response to be sent
+                if hasattr(self, 'shutdown_callback') and self.shutdown_callback:
+                    self.shutdown_callback()
+                else:
+                    print("No shutdown callback set, attempting system exit...")
+                    import os
+                    os._exit(0)
+
+            thread = threading.Thread(target=delayed_shutdown)
+            thread.daemon = True
+            thread.start()
 
     def notify_vnc_status(self, status):
         """Notify web clients of VNC status change."""
