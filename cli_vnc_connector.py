@@ -8,6 +8,7 @@ import sys
 import os
 import platform
 import shutil
+import glob
 from threading import Thread
 import time
 
@@ -39,11 +40,18 @@ class CLIVNCConnector:
 
             print(f"Starting VNC client: {' '.join(vnc_command[:3])}...")
 
+            # Prepare environment variables if needed
+            env = os.environ.copy()
+            if hasattr(self, 'client_env_vars') and self.client_env_vars:
+                env.update(self.client_env_vars)
+                print(f"  Using environment variables: {list(self.client_env_vars.keys())}")
+
             # Start VNC client in background
             self.vnc_process = subprocess.Popen(
                 vnc_command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                env=env,
                 creationflags=subprocess.CREATE_NEW_CONSOLE if platform.system() == 'Windows' else 0
             )
 
@@ -102,7 +110,8 @@ class CLIVNCConnector:
                     'C:\\Program Files (x86)\\TightVNC\\tvnviewer.exe'
                 ],
                 'args': ['-host', connection_string] + (['-password', password] if password else []),
-                'supports_password': True
+                'supports_password': True,
+                'auth_method': 'cli_param'
             },
             'realvnc': {
                 'name': 'RealVNC Viewer',
@@ -112,7 +121,26 @@ class CLIVNCConnector:
                     'C:\\Program Files (x86)\\RealVNC\\VNC Viewer\\vncviewer.exe'
                 ],
                 'args': [connection_string],
-                'supports_password': False  # RealVNC CLI doesn't support password parameter
+                'supports_password': False,  # RealVNC CLI doesn't support password parameter
+                'auth_method': 'manual'
+            },
+            'tigervnc': {
+                'name': 'TigerVNC Viewer',
+                'executable': 'vncviewer*.exe',  # Pattern for search
+                'locations': [],  # Will be populated dynamically
+                'search_patterns': [
+                    'vncviewer64-*.*.*.exe',
+                    'vncviewer-*.*.*.exe',
+                    '**/vncviewer64-*.*.*.exe',
+                    '**/vncviewer-*.*.*.exe'
+                ],
+                'args': [connection_string],
+                'supports_password': True,  # Via environment variables
+                'auth_method': 'env_vars',
+                'env_vars': {
+                    'VNC_USERNAME': username,
+                    'VNC_PASSWORD': password
+                }
             },
             'ultravnc': {
                 'name': 'UltraVNC',
@@ -124,7 +152,8 @@ class CLIVNCConnector:
                     'C:\\Program Files (x86)\\UltraVNC\\vncviewer.exe'  # Legacy path
                 ],
                 'args': [connection_string] + (['-password', password] if password else []),
-                'supports_password': True
+                'supports_password': True,
+                'auth_method': 'cli_param'
             }
         }
 
@@ -134,7 +163,7 @@ class CLIVNCConnector:
             return self._try_client(client)
 
         # Otherwise try all clients in order of preference
-        for client_key in ['tightvnc', 'realvnc', 'ultravnc']:
+        for client_key in ['tightvnc', 'tigervnc', 'realvnc', 'ultravnc']:
             client = clients[client_key]
             result = self._try_client(client)
             if result:
@@ -144,20 +173,54 @@ class CLIVNCConnector:
 
     def _try_client(self, client):
         """Try to find and use a specific VNC client."""
-        # Check if executable exists in PATH
-        if shutil.which(client['executable']):
-            cmd = [client['executable']] + client['args']
-            self.client_executable = client['executable']
+        executable_path = None
+
+        # Check if client has search patterns (for TigerVNC standalone files)
+        if 'search_patterns' in client:
+            executable_path = self._find_tigervnc_executable(client['search_patterns'])
+        else:
+            # Check if executable exists in PATH
+            if shutil.which(client['executable']):
+                executable_path = client['executable']
+            else:
+                # Check specific locations
+                for location in client['locations']:
+                    if os.path.exists(location):
+                        executable_path = location
+                        break
+
+        if executable_path:
+            cmd = [executable_path] + client['args']
+            self.client_executable = os.path.basename(executable_path)
+
+            # Store environment variables if client uses them
+            if client.get('auth_method') == 'env_vars' and 'env_vars' in client:
+                self.client_env_vars = client['env_vars']
+            else:
+                self.client_env_vars = None
+
             return [arg for arg in cmd if arg]  # Filter empty args
 
-        # Check specific locations
-        for location in client['locations']:
-            if os.path.exists(location):
-                cmd = [location] + client['args']
-                self.client_executable = os.path.basename(location)
-                return [arg for arg in cmd if arg]  # Filter empty args
-
         return None
+
+    def _find_tigervnc_executable(self, search_patterns):
+        """Find TigerVNC standalone executable using search patterns."""
+        try:
+            # Search in current directory and subdirectories
+            for pattern in search_patterns:
+                matches = glob.glob(pattern, recursive=True)
+                if matches:
+                    # Return the first match, preferring 64-bit version
+                    matches.sort(reverse=True)  # This puts vncviewer64- before vncviewer-
+                    executable_path = matches[0]
+                    print(f"Found TigerVNC executable: {executable_path}")
+                    return os.path.abspath(executable_path)
+
+            return None
+
+        except Exception as e:
+            print(f"Error searching for TigerVNC executable: {e}")
+            return None
 
     def _get_macos_vnc_command(self, connection_string, username, password, selected_client=None):
         """Get VNC command for macOS."""
@@ -177,17 +240,27 @@ class CLIVNCConnector:
             'remmina': {
                 'name': 'Remmina',
                 'executable': 'remmina',
-                'args': ['-c', f'vnc://{connection_string}']
+                'args': ['-c', f'vnc://{connection_string}'],
+                'supports_password': True,
+                'auth_method': 'url_based'
             },
-            'vncviewer': {
+            'tigervnc': {
                 'name': 'TigerVNC Viewer',
                 'executable': 'vncviewer',
-                'args': [connection_string]
+                'args': [connection_string],
+                'supports_password': True,
+                'auth_method': 'env_vars',
+                'env_vars': {
+                    'VNC_USERNAME': username,
+                    'VNC_PASSWORD': password
+                }
             },
             'vinagre': {
                 'name': 'Vinagre',
                 'executable': 'vinagre',
-                'args': [f'vnc://{connection_string}']
+                'args': [f'vnc://{connection_string}'],
+                'supports_password': True,
+                'auth_method': 'url_based'
             }
         }
 
@@ -199,10 +272,17 @@ class CLIVNCConnector:
                 return [client['executable']] + client['args']
 
         # Otherwise try all clients in order
-        for client_key in ['remmina', 'vncviewer', 'vinagre']:
+        for client_key in ['remmina', 'tigervnc', 'vinagre']:
             client = clients[client_key]
             if shutil.which(client['executable']):
                 self.client_executable = client['executable']
+
+                # Handle environment variables for TigerVNC
+                if client.get('auth_method') == 'env_vars' and 'env_vars' in client:
+                    self.client_env_vars = client['env_vars']
+                else:
+                    self.client_env_vars = None
+
                 return [client['executable']] + client['args']
 
         return None
@@ -255,12 +335,12 @@ class CLIVNCConnector:
             vnc_executables = []
 
             if system == "Windows":
-                vnc_executables = ['tvnviewer.exe', 'vncviewer.exe']
+                vnc_executables = ['tvnviewer.exe', 'vncviewer.exe']  # Covers TigerVNC, RealVNC, UltraVNC
             elif system == "Darwin":
                 # macOS Screen Sharing doesn't need process killing
                 return
             else:  # Linux
-                vnc_executables = ['remmina', 'vncviewer', 'vinagre', 'krdc']
+                vnc_executables = ['remmina', 'vncviewer', 'vinagre', 'krdc']  # vncviewer covers TigerVNC
 
             for executable in vnc_executables:
                 if system == "Windows":
@@ -320,6 +400,17 @@ class CLIVNCConnector:
                     ],
                     'supports_password': False
                 },
+                'tigervnc': {
+                    'name': 'TigerVNC Viewer',
+                    'executable': 'vncviewer*.exe',
+                    'search_patterns': [
+                        'vncviewer64-*.*.*.exe',
+                        'vncviewer-*.*.*.exe',
+                        '**/vncviewer64-*.*.*.exe',
+                        '**/vncviewer-*.*.*.exe'
+                    ],
+                    'supports_password': True
+                },
                 'ultravnc': {
                     'name': 'UltraVNC',
                     'executable': 'vncviewer.exe',
@@ -334,24 +425,30 @@ class CLIVNCConnector:
             }
 
             for client_id, client_info in clients.items():
-                # Check if executable exists in PATH
-                if shutil.which(client_info['executable']):
+                client_found = False
+
+                # Special handling for TigerVNC with search patterns
+                if 'search_patterns' in client_info:
+                    tigervnc_path = self._find_tigervnc_executable(client_info['search_patterns'])
+                    if tigervnc_path:
+                        client_found = True
+                else:
+                    # Check if executable exists in PATH
+                    if shutil.which(client_info['executable']):
+                        client_found = True
+                    else:
+                        # Check specific locations
+                        for location in client_info['locations']:
+                            if os.path.exists(location):
+                                client_found = True
+                                break
+
+                if client_found:
                     available.append({
                         'id': client_id,
                         'name': client_info['name'],
                         'supports_password': client_info['supports_password']
                     })
-                    continue
-
-                # Check specific locations
-                for location in client_info['locations']:
-                    if os.path.exists(location):
-                        available.append({
-                            'id': client_id,
-                            'name': client_info['name'],
-                            'supports_password': client_info['supports_password']
-                        })
-                        break
 
         elif system == "Darwin":
             available.append({
@@ -363,7 +460,7 @@ class CLIVNCConnector:
         else:  # Linux
             clients = {
                 'remmina': {'name': 'Remmina', 'supports_password': True},
-                'vncviewer': {'name': 'TigerVNC Viewer', 'supports_password': True},
+                'tigervnc': {'name': 'TigerVNC Viewer', 'supports_password': True},
                 'vinagre': {'name': 'Vinagre', 'supports_password': True}
             }
 

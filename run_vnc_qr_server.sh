@@ -67,8 +67,9 @@ else:
         print()
         print('To enable VNC connections, please install one of the following:')
         print('  Ubuntu/Debian: sudo apt install remmina')
+        print('  Ubuntu/Debian: sudo apt install tigervnc-viewer')
         print('  Fedora/RHEL: sudo dnf install remmina')
-        print('  Or: sudo apt install tigervnc-viewer')
+        print('  Fedora/RHEL: sudo dnf install tigervnc')
         print('  Or: sudo apt install vinagre')
     else:
         print('No additional VNC clients found')

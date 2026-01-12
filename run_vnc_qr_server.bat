@@ -68,6 +68,22 @@ echo for path in real_paths: >> temp_vnc_check.py
 echo     if os.path.exists(path^): >> temp_vnc_check.py
 echo         clients_found.append(f'RealVNC: {path}'^) >> temp_vnc_check.py
 echo. >> temp_vnc_check.py
+echo # Check TigerVNC (standalone files^) >> temp_vnc_check.py
+echo import glob >> temp_vnc_check.py
+echo tiger_patterns = [ >> temp_vnc_check.py
+echo     'vncviewer64-*.*.*.exe', >> temp_vnc_check.py
+echo     'vncviewer-*.*.*.exe', >> temp_vnc_check.py
+echo     '**/vncviewer64-*.*.*.exe', >> temp_vnc_check.py
+echo     '**/vncviewer-*.*.*.exe' >> temp_vnc_check.py
+echo ] >> temp_vnc_check.py
+echo for pattern in tiger_patterns: >> temp_vnc_check.py
+echo     matches = glob.glob(pattern, recursive=True^) >> temp_vnc_check.py
+echo     for match in matches: >> temp_vnc_check.py
+echo         clients_found.append(f'TigerVNC: {match}'^) >> temp_vnc_check.py
+echo         break  # Only show first match per pattern >> temp_vnc_check.py
+echo     if matches: >> temp_vnc_check.py
+echo         break  # Stop searching if we found any >> temp_vnc_check.py
+echo. >> temp_vnc_check.py
 echo # Check UltraVNC >> temp_vnc_check.py
 echo ultra_paths = [ >> temp_vnc_check.py
 echo     'C:\\\\Program Files\\\\uvnc bvba\\\\UltraVNC\\\\vncviewer.exe', >> temp_vnc_check.py
@@ -97,6 +113,7 @@ echo     print('VNC functionality will be limited to QR code display only'^) >> 
 echo     print(^) >> temp_vnc_check.py
 echo     print('To enable VNC connections, please install one of the following:'^) >> temp_vnc_check.py
 echo     print('  - TightVNC: https://www.tightvnc.com/download.php'^) >> temp_vnc_check.py
+echo     print('  - TigerVNC: https://tigervnc.org/'^) >> temp_vnc_check.py
 echo     print('  - RealVNC Viewer: https://www.realvnc.com/en/connect/download/viewer/'^) >> temp_vnc_check.py
 echo     print('  - UltraVNC: https://uvnc.com/downloads/ultravnc.html'^) >> temp_vnc_check.py
 echo     print(^) >> temp_vnc_check.py
