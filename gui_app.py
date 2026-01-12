@@ -137,6 +137,24 @@ class VNCQRApp:
             self.status_label.config(text=message)
         print(f"Status: {message}")
 
+    def hide_window(self):
+        """Hide the QR code window when VNC is connected."""
+        try:
+            self.root.withdraw()
+            print("QR window hidden")
+        except Exception as e:
+            print(f"Error hiding window: {e}")
+
+    def show_window(self):
+        """Show the QR code window when VNC is disconnected."""
+        try:
+            self.root.deiconify()
+            self.root.lift()
+            self.root.attributes('-topmost', True)
+            print("QR window shown")
+        except Exception as e:
+            print(f"Error showing window: {e}")
+
     def exit_app(self, event=None):
         """Exit the application."""
         try:

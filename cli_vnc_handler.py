@@ -46,9 +46,10 @@ class CLIVNCHandler:
             success = self.app.vnc_connector.connect(ip, port, username, password, selected_client)
 
             if success:
-                # Connection successful
+                # Connection successful - hide QR window
                 client_info = f" ({selected_client})" if selected_client else ""
                 self.app.update_status(f"VNC client launched for {ip}:{port}{client_info}")
+                self.app.hide_window()
                 self.app.web_server.notify_vnc_status('connected')
 
                 # Monitor connection
@@ -70,8 +71,9 @@ class CLIVNCHandler:
             while self.app.vnc_connector.is_connected():
                 time.sleep(2)  # Check every 2 seconds
 
-            # Connection ended
+            # Connection ended - show QR window
             print("VNC connection ended")
+            self.app.show_window()
             self.app.update_status("VNC client disconnected")
             self.app.web_server.notify_vnc_status('disconnected')
 
@@ -82,6 +84,7 @@ class CLIVNCHandler:
         """Disconnect VNC and return to normal mode."""
         try:
             self.app.vnc_connector.disconnect()
+            self.app.show_window()
             self.app.update_status("VNC client stopped")
             self.app.web_server.notify_vnc_status('disconnected')
             return True
