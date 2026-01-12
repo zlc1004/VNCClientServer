@@ -33,29 +33,27 @@ if errorlevel 1 (
 
 REM Using explicit venv paths instead of activation
 
-REM Install requirements if they don't exist
-if not exist "venv\Lib\site-packages\flask\" (
-    echo Installing dependencies...
-    .\venv\Scripts\pip.exe install -r requirements.txt
-    if errorlevel 1 (
-        echo Failed to install dependencies!
-        pause
-        exit /b 1
-    )
+REM Install dependencies
+echo Installing dependencies...
+.\venv\Scripts\pip.exe install -r requirements.txt
+if errorlevel 1 (
+    echo Failed to install dependencies!
+    pause
+    exit /b 1
+)
 
-    echo Installing pyVNC library...
-    if exist "pyVNC\setup.py" (
-        .\venv\Scripts\pip.exe install git+file:///%CD%/pyVNC
-        if errorlevel 1 (
-            echo Failed to install pyVNC!
-            pause
-            exit /b 1
-        )
-    ) else (
-        echo pyVNC setup.py not found! Make sure git submodules are properly initialized.
+echo Installing pyVNC library...
+if exist "pyVNC\setup.py" (
+    .\venv\Scripts\pip.exe install git+file:///%CD%/pyVNC
+    if errorlevel 1 (
+        echo Failed to install pyVNC!
         pause
         exit /b 1
     )
+) else (
+    echo pyVNC setup.py not found! Make sure git submodules are properly initialized.
+    pause
+    exit /b 1
 )
 
 REM Start the application

@@ -26,23 +26,19 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Check if requirements are installed
-if [ ! -f ".conda/.deps_installed" ]; then
-    echo "Installing dependencies..."
-    $PIP_PATH install -r requirements.txt
-    if [ $? -ne 0 ]; then
-        echo "❌ Failed to install dependencies!"
-        exit 1
-    fi
+# Install dependencies
+echo "Installing dependencies..."
+$PIP_PATH install -r requirements.txt
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to install dependencies!"
+    exit 1
+fi
 
-    echo "Installing pyVNC library..."
-    $PIP_PATH install -e ./pyVNC/
-    if [ $? -ne 0 ]; then
-        echo "❌ Failed to install pyVNC!"
-        exit 1
-    fi
-
-    touch .conda/.deps_installed
+echo "Installing pyVNC library..."
+$PIP_PATH install -e ./pyVNC/
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to install pyVNC!"
+    exit 1
 fi
 
 # Start the application
