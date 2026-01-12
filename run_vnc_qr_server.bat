@@ -22,14 +22,9 @@ if not exist "venv\" (
     )
 )
 
-REM Initialize git submodules
-echo Updating git submodules...
-git submodule update --init --recursive
-if errorlevel 1 (
-    echo Failed to update git submodules!
-    pause
-    exit /b 1
-)
+REM Git submodules no longer needed for VNC functionality
+REM echo Updating git submodules...
+REM git submodule update --init --recursive
 
 REM Using explicit venv paths instead of activation
 
@@ -42,32 +37,72 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo Installing pyVNC library...
-REM First upgrade numpy in our environment
-.\venv\Scripts\pip.exe install --upgrade numpy
+echo Checking for VNC clients on Windows...
+.\venv\Scripts\python.exe -c "
+import sys
+import os
+import shutil
+
+print('Python version:', sys.version)
+print()
+
+# Check for VNC clients
+clients_found = []
+
+# Check TightVNC
+tight_paths = [
+    'C:\\Program Files\\TightVNC\\tvnviewer.exe',
+    'C:\\Program Files (x86)\\TightVNC\\tvnviewer.exe'
+]
+for path in tight_paths:
+    if os.path.exists(path):
+        clients_found.append(f'TightVNC: {path}')
+
+# Check RealVNC
+real_paths = [
+    'C:\\Program Files\\RealVNC\\VNC Viewer\\vncviewer.exe',
+    'C:\\Program Files (x86)\\RealVNC\\VNC Viewer\\vncviewer.exe'
+]
+for path in real_paths:
+    if os.path.exists(path):
+        clients_found.append(f'RealVNC: {path}')
+
+# Check UltraVNC
+ultra_paths = [
+    'C:\\Program Files\\uvnc bvba\\UltraVNC\\vncviewer.exe',
+    'C:\\Program Files (x86)\\uvnc bvba\\UltraVNC\\vncviewer.exe',
+    'C:\\Program Files\\UltraVNC\\vncviewer.exe',
+    'C:\\Program Files (x86)\\UltraVNC\\vncviewer.exe'
+]
+for path in ultra_paths:
+    if os.path.exists(path):
+        clients_found.append(f'UltraVNC: {path}')
+
+# Check PATH
+if shutil.which('vncviewer.exe'):
+    clients_found.append('VNC Viewer in PATH')
+if shutil.which('tvnviewer.exe'):
+    clients_found.append('TightVNC Viewer in PATH')
+
+if clients_found:
+    print('✅ VNC clients found:')
+    for client in clients_found:
+        print(f'  - {client}')
+    print()
+    print('✅ VNC functionality will be available')
+else:
+    print('❌ No VNC clients detected')
+    print('VNC functionality will be limited to QR code display only')
+    print()
+    print('To enable VNC connections, please install one of the following:')
+    print('  - TightVNC: https://www.tightvnc.com/download.php')
+    print('  - RealVNC Viewer: https://www.realvnc.com/en/connect/download/viewer/')
+    print('  - UltraVNC: https://uvnc.com/downloads/ultravnc.html')
+    print()
+"
+
 if errorlevel 1 (
-    echo Warning: Failed to upgrade numpy
-)
-
-if exist "pyVNC\setup.py" (
-    .\venv\Scripts\pip.exe install git+file:///%CD%/pyVNC
-    if errorlevel 1 (
-        echo Failed to install pyVNC!
-        pause
-        exit /b 1
-    )
-
-    echo Testing pyVNC import...
-    .\venv\Scripts\python.exe -c "from pyVNC.Client import Client; print('✓ pyVNC import test successful')" 2>nul
-    if errorlevel 1 (
-        echo ⚠ Warning: pyVNC import test failed - VNC functionality may be limited
-        echo Run '.\venv\Scripts\python.exe test_windows_imports.py' for detailed diagnostics
-        echo The application will start with QR code functionality only
-    ) else (
-        echo ✓ pyVNC imports working correctly - Full VNC functionality enabled
-    )
-) else (
-    echo pyVNC setup.py not found! Make sure git submodules are properly initialized.
+    echo Failed to check VNC clients!
     pause
     exit /b 1
 )

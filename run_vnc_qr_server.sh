@@ -18,13 +18,9 @@ PIP_PATH="./.conda/bin/pip"
 echo "✅ Using conda environment at ./.conda"
 echo "Python version: $($PYTHON_PATH --version)"
 
-# Initialize git submodules
-echo "Updating git submodules..."
-git submodule update --init --recursive
-if [ $? -ne 0 ]; then
-    echo "❌ Failed to update git submodules!"
-    exit 1
-fi
+# Git submodules no longer needed for VNC functionality
+# echo "Updating git submodules..."
+# git submodule update --init --recursive
 
 # Install dependencies
 echo "Installing dependencies..."
@@ -34,28 +30,54 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "Installing pyVNC library..."
-# First, make sure numpy is properly installed in our environment
-$PIP_PATH install --upgrade numpy
-if [ $? -ne 0 ]; then
-    echo "⚠️ Warning: Failed to upgrade numpy"
-fi
+echo "Checking for VNC clients..."
+$PYTHON_PATH -c "
+import sys
+import shutil
+import subprocess
+import platform
 
-# Install pyVNC
-$PIP_PATH install -e ./pyVNC/
+print('Python version:', sys.version)
+print('Platform:', platform.system())
+print()
+
+clients_found = []
+system = platform.system()
+
+if system == 'Darwin':  # macOS
+    print('✅ macOS has built-in VNC support (Screen Sharing)')
+    clients_found.append('Built-in Screen Sharing')
+else:  # Linux
+    # Check common VNC clients
+    clients = ['remmina', 'vncviewer', 'vinagre', 'krdc']
+    for client in clients:
+        if shutil.which(client):
+            clients_found.append(client)
+
+if clients_found:
+    print('✅ VNC clients found:')
+    for client in clients_found:
+        print(f'  - {client}')
+    print()
+    print('✅ VNC functionality will be available')
+else:
+    if system == 'Linux':
+        print('❌ No VNC clients detected')
+        print('VNC functionality will be limited to QR code display only')
+        print()
+        print('To enable VNC connections, please install one of the following:')
+        print('  Ubuntu/Debian: sudo apt install remmina')
+        print('  Fedora/RHEL: sudo dnf install remmina')
+        print('  Or: sudo apt install tigervnc-viewer')
+        print('  Or: sudo apt install vinagre')
+    else:
+        print('No additional VNC clients found')
+print()
+"
+
 if [ $? -ne 0 ]; then
-    echo "❌ Failed to install pyVNC!"
+    echo "❌ Failed to check VNC clients!"
     exit 1
-fi
-
-echo "Testing pyVNC import..."
-$PYTHON_PATH -c "from pyVNC.Client import Client; print('✓ pyVNC import test successful')" 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "⚠️ Warning: pyVNC import test failed - VNC functionality may be limited"
-    echo "Run '$PYTHON_PATH debug_vnc_imports.py' for detailed diagnostics"
-    echo "The application will start with QR code functionality only"
-else
-    echo "✅ pyVNC imports working correctly - Full VNC functionality enabled"
 fi
 
 # Start the application

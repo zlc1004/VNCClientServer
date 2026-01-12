@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 import qrcode
 from PIL import Image, ImageTk
 from network_utils import get_local_ip
-from vnc_connector import VNCConnector
+from cli_vnc_connector import CLIVNCConnector
 import threading
 import json
 
@@ -11,7 +11,7 @@ class VNCQRApp:
     def __init__(self, config_manager, web_server):
         self.config_manager = config_manager
         self.web_server = web_server
-        self.vnc_connector = VNCConnector()
+        self.vnc_connector = CLIVNCConnector()
         self.vnc_mode = False
         self.vnc_window = None
 
@@ -22,6 +22,9 @@ class VNCQRApp:
         self.root = tk.Tk()
         self.setup_window()
         self.create_qr_display()
+
+        # Show available VNC clients
+        self.show_vnc_client_info()
 
     def setup_window(self):
         """Configure the main window to be fullscreen, always on top, and without decorations."""
@@ -89,17 +92,50 @@ class VNCQRApp:
         self.status_label = tk.Label(parent, text="Scan QR code to access VNC control",
                                    font=('Arial', 14), fg='#bdc3c7', bg='#2c3e50')
         self.status_label.pack(pady=10)
+
+        # VNC client info
+        self.vnc_info_label = tk.Label(parent, text="",
+                                     font=('Arial', 10), fg='#95a5a6', bg='#2c3e50')
+        self.vnc_info_label.pack(pady=(0, 10))
     def handle_vnc_request(self, vnc_data):
         """Handle VNC connection request from web interface."""
-        from gui_vnc_handler import VNCHandler
+        from cli_vnc_handler import CLIVNCHandler
         if not hasattr(self, 'vnc_handler'):
-            self.vnc_handler = VNCHandler(self)
+            self.vnc_handler = CLIVNCHandler(self)
         return self.vnc_handler.handle_vnc_request(vnc_data)
+
+    def show_vnc_client_info(self):
+        """Show information about available VNC clients."""
+        try:
+            available_clients = self.vnc_connector.get_available_clients()
+            if available_clients:
+                info_text = f"VNC Clients Found: {len(available_clients)}"
+                print("Available VNC clients:")
+                for client in available_clients:
+                    if isinstance(client, dict):
+                        password_support = "✓" if client.get('supports_password') else "✗"
+                        print(f"  - {client['name']} (Password: {password_support})")
+                    else:
+                        print(f"  - {client}")
+            else:
+                info_text = "No VNC clients detected - Install a VNC client"
+                print("⚠️ No VNC clients found on system")
+                print("Please install one of the following:")
+                print("  Windows: TightVNC, RealVNC Viewer, UltraVNC")
+                print("  macOS: Built-in Screen Sharing (vnc:// URLs)")
+                print("  Linux: remmina, vncviewer, vinagre")
+
+            if hasattr(self, 'vnc_info_label'):
+                self.vnc_info_label.config(text=info_text)
+
+        except Exception as e:
+            print(f"Error checking VNC clients: {e}")
 
     def update_status(self, message):
         """Update status message."""
         if hasattr(self, 'status_label'):
             self.status_label.config(text=message)
+        print(f"Status: {message}")
 
     def exit_app(self, event=None):
         """Exit the application."""

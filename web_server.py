@@ -47,6 +47,23 @@ class WebServer:
                     self.config_manager.save_settings(settings)
                 return jsonify({'status': 'success'})
 
+        @self.app.route('/api/vnc-clients', methods=['GET'])
+        def api_vnc_clients():
+            """API endpoint to get available VNC clients."""
+            try:
+                from cli_vnc_connector import CLIVNCConnector
+                connector = CLIVNCConnector()
+                available_clients = connector.get_available_clients()
+                return jsonify({
+                    'status': 'success',
+                    'clients': available_clients
+                })
+            except Exception as e:
+                return jsonify({
+                    'status': 'error',
+                    'message': str(e)
+                })
+
         @self.app.route('/api/servers', methods=['GET', 'POST', 'DELETE'])
         def api_servers():
             """API endpoint for VNC servers."""

@@ -77,7 +77,8 @@
 
         .form-group input[type="text"],
         .form-group input[type="number"],
-        .form-group input[type="password"] {
+        .form-group input[type="password"],
+        .form-group select {
             width: 100%;
             padding: 12px;
             border: 1px solid #7f8c8d;
@@ -90,10 +91,23 @@
 
         .form-group input[type="text"]:focus,
         .form-group input[type="number"]:focus,
-        .form-group input[type="password"]:focus {
+        .form-group input[type="password"]:focus,
+        .form-group select:focus {
             outline: none;
             border-color: #3498db;
             box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        .form-group select option {
+            background: #34495e;
+            color: white;
+        }
+
+        .form-text {
+            font-size: 12px;
+            color: #bdc3c7;
+            margin-top: 5px;
+            display: block;
         }
 
         .form-row {
@@ -291,6 +305,16 @@
                     <div class="form-group">
                         <label for="vncPassword">Password</label>
                         <input type="password" id="vncPassword" name="password" placeholder="Optional">
+                        <small id="passwordHelp" class="form-text">Password support depends on selected VNC client</small>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vncClient">VNC Client</label>
+                        <select id="vncClient" name="client" class="form-control">
+                            <option value="">Auto-detect (recommended)</option>
+                        </select>
+                        <small class="form-text">Select specific VNC client or leave as auto-detect</small>
                     </div>
                 </div>
                 <div class="checkbox-group">
@@ -345,6 +369,7 @@
         // Initialize WebSocket connection
         const socket = io();
         let isConnected = false;
+        let availableClients = [];
 
         // WebSocket event handlers
         socket.on('connect', function() {
@@ -362,6 +387,62 @@
             handleVNCStatus(data.status, data.error);
         });
 
+        // Load available VNC clients on page load
+        async function loadAvailableClients() {
+            try {
+                const response = await fetch('/api/vnc-clients');
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    availableClients = result.clients;
+                    populateClientDropdown();
+                }
+            } catch (error) {
+                console.error('Error loading VNC clients:', error);
+            }
+        }
+
+        // Populate VNC client dropdown
+        function populateClientDropdown() {
+            const clientSelect = document.getElementById('vncClient');
+
+            // Clear existing options except auto-detect
+            clientSelect.innerHTML = '<option value="">Auto-detect (recommended)</option>';
+
+            // Add available clients
+            availableClients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = `${client.name}${client.supports_password ? '' : ' (no password support)'}`;
+                clientSelect.appendChild(option);
+            });
+        }
+
+        // Handle client selection change
+        document.getElementById('vncClient').addEventListener('change', function(e) {
+            const selectedClientId = e.target.value;
+            const passwordField = document.getElementById('vncPassword');
+            const passwordHelp = document.getElementById('passwordHelp');
+
+            if (selectedClientId) {
+                const selectedClient = availableClients.find(c => c.id === selectedClientId);
+                if (selectedClient && !selectedClient.supports_password) {
+                    passwordField.disabled = true;
+                    passwordField.value = '';
+                    passwordHelp.textContent = 'Selected VNC client does not support password parameter';
+                    passwordHelp.style.color = '#f39c12';
+                } else {
+                    passwordField.disabled = false;
+                    passwordHelp.textContent = 'Password support available for selected client';
+                    passwordHelp.style.color = '#bdc3c7';
+                }
+            } else {
+                passwordField.disabled = false;
+                passwordHelp.textContent = 'Password support depends on selected VNC client';
+                passwordHelp.style.color = '#bdc3c7';
+            }
+        });
+
         // VNC Connection Form Handler
         document.getElementById('vncForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -372,6 +453,7 @@
                 port: parseInt(formData.get('port')),
                 username: formData.get('username'),
                 password: formData.get('password'),
+                client: formData.get('client') || null,
                 save_server: formData.has('saveServer')
             };
 
@@ -494,6 +576,7 @@
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             updateStatus('Ready to connect', 'info');
+            loadAvailableClients();
         });
     </script>
 </body>
