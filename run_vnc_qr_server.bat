@@ -38,68 +38,74 @@ if errorlevel 1 (
 )
 
 echo Checking for VNC clients on Windows...
-.\venv\Scripts\python.exe -c "
-import sys
-import os
-import shutil
 
-print('Python version:', sys.version)
-print()
+REM Create temporary Python script for VNC client detection
+echo import sys > temp_vnc_check.py
+echo import os >> temp_vnc_check.py
+echo import shutil >> temp_vnc_check.py
+echo. >> temp_vnc_check.py
+echo print('Python version:', sys.version^) >> temp_vnc_check.py
+echo print(^) >> temp_vnc_check.py
+echo. >> temp_vnc_check.py
+echo # Check for VNC clients >> temp_vnc_check.py
+echo clients_found = [] >> temp_vnc_check.py
+echo. >> temp_vnc_check.py
+echo # Check TightVNC >> temp_vnc_check.py
+echo tight_paths = [ >> temp_vnc_check.py
+echo     'C:\\\\Program Files\\\\TightVNC\\\\tvnviewer.exe', >> temp_vnc_check.py
+echo     'C:\\\\Program Files ^(x86^)\\\\TightVNC\\\\tvnviewer.exe' >> temp_vnc_check.py
+echo ] >> temp_vnc_check.py
+echo for path in tight_paths: >> temp_vnc_check.py
+echo     if os.path.exists(path^): >> temp_vnc_check.py
+echo         clients_found.append(f'TightVNC: {path}'^) >> temp_vnc_check.py
+echo. >> temp_vnc_check.py
+echo # Check RealVNC >> temp_vnc_check.py
+echo real_paths = [ >> temp_vnc_check.py
+echo     'C:\\\\Program Files\\\\RealVNC\\\\VNC Viewer\\\\vncviewer.exe', >> temp_vnc_check.py
+echo     'C:\\\\Program Files ^(x86^)\\\\RealVNC\\\\VNC Viewer\\\\vncviewer.exe' >> temp_vnc_check.py
+echo ] >> temp_vnc_check.py
+echo for path in real_paths: >> temp_vnc_check.py
+echo     if os.path.exists(path^): >> temp_vnc_check.py
+echo         clients_found.append(f'RealVNC: {path}'^) >> temp_vnc_check.py
+echo. >> temp_vnc_check.py
+echo # Check UltraVNC >> temp_vnc_check.py
+echo ultra_paths = [ >> temp_vnc_check.py
+echo     'C:\\\\Program Files\\\\uvnc bvba\\\\UltraVNC\\\\vncviewer.exe', >> temp_vnc_check.py
+echo     'C:\\\\Program Files ^(x86^)\\\\uvnc bvba\\\\UltraVNC\\\\vncviewer.exe', >> temp_vnc_check.py
+echo     'C:\\\\Program Files\\\\UltraVNC\\\\vncviewer.exe', >> temp_vnc_check.py
+echo     'C:\\\\Program Files ^(x86^)\\\\UltraVNC\\\\vncviewer.exe' >> temp_vnc_check.py
+echo ] >> temp_vnc_check.py
+echo for path in ultra_paths: >> temp_vnc_check.py
+echo     if os.path.exists(path^): >> temp_vnc_check.py
+echo         clients_found.append(f'UltraVNC: {path}'^) >> temp_vnc_check.py
+echo. >> temp_vnc_check.py
+echo # Check PATH >> temp_vnc_check.py
+echo if shutil.which('vncviewer.exe'^): >> temp_vnc_check.py
+echo     clients_found.append('VNC Viewer in PATH'^) >> temp_vnc_check.py
+echo if shutil.which('tvnviewer.exe'^): >> temp_vnc_check.py
+echo     clients_found.append('TightVNC Viewer in PATH'^) >> temp_vnc_check.py
+echo. >> temp_vnc_check.py
+echo if clients_found: >> temp_vnc_check.py
+echo     print('✅ VNC clients found:'^) >> temp_vnc_check.py
+echo     for client in clients_found: >> temp_vnc_check.py
+echo         print(f'  - {client}'^) >> temp_vnc_check.py
+echo     print(^) >> temp_vnc_check.py
+echo     print('✅ VNC functionality will be available'^) >> temp_vnc_check.py
+echo else: >> temp_vnc_check.py
+echo     print('❌ No VNC clients detected'^) >> temp_vnc_check.py
+echo     print('VNC functionality will be limited to QR code display only'^) >> temp_vnc_check.py
+echo     print(^) >> temp_vnc_check.py
+echo     print('To enable VNC connections, please install one of the following:'^) >> temp_vnc_check.py
+echo     print('  - TightVNC: https://www.tightvnc.com/download.php'^) >> temp_vnc_check.py
+echo     print('  - RealVNC Viewer: https://www.realvnc.com/en/connect/download/viewer/'^) >> temp_vnc_check.py
+echo     print('  - UltraVNC: https://uvnc.com/downloads/ultravnc.html'^) >> temp_vnc_check.py
+echo     print(^) >> temp_vnc_check.py
 
-# Check for VNC clients
-clients_found = []
+REM Execute the temporary Python script
+.\venv\Scripts\python.exe temp_vnc_check.py
 
-# Check TightVNC
-tight_paths = [
-    'C:\\Program Files\\TightVNC\\tvnviewer.exe',
-    'C:\\Program Files (x86)\\TightVNC\\tvnviewer.exe'
-]
-for path in tight_paths:
-    if os.path.exists(path):
-        clients_found.append(f'TightVNC: {path}')
-
-# Check RealVNC
-real_paths = [
-    'C:\\Program Files\\RealVNC\\VNC Viewer\\vncviewer.exe',
-    'C:\\Program Files (x86)\\RealVNC\\VNC Viewer\\vncviewer.exe'
-]
-for path in real_paths:
-    if os.path.exists(path):
-        clients_found.append(f'RealVNC: {path}')
-
-# Check UltraVNC
-ultra_paths = [
-    'C:\\Program Files\\uvnc bvba\\UltraVNC\\vncviewer.exe',
-    'C:\\Program Files (x86)\\uvnc bvba\\UltraVNC\\vncviewer.exe',
-    'C:\\Program Files\\UltraVNC\\vncviewer.exe',
-    'C:\\Program Files (x86)\\UltraVNC\\vncviewer.exe'
-]
-for path in ultra_paths:
-    if os.path.exists(path):
-        clients_found.append(f'UltraVNC: {path}')
-
-# Check PATH
-if shutil.which('vncviewer.exe'):
-    clients_found.append('VNC Viewer in PATH')
-if shutil.which('tvnviewer.exe'):
-    clients_found.append('TightVNC Viewer in PATH')
-
-if clients_found:
-    print('✅ VNC clients found:')
-    for client in clients_found:
-        print(f'  - {client}')
-    print()
-    print('✅ VNC functionality will be available')
-else:
-    print('❌ No VNC clients detected')
-    print('VNC functionality will be limited to QR code display only')
-    print()
-    print('To enable VNC connections, please install one of the following:')
-    print('  - TightVNC: https://www.tightvnc.com/download.php')
-    print('  - RealVNC Viewer: https://www.realvnc.com/en/connect/download/viewer/')
-    print('  - UltraVNC: https://uvnc.com/downloads/ultravnc.html')
-    print()
-"
+REM Clean up temporary file
+del temp_vnc_check.py
 
 if errorlevel 1 (
     echo Failed to check VNC clients!
