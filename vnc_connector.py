@@ -17,10 +17,10 @@ class VNCConnector:
         self.connection_thread = None
         self.connected = False
 
-    def connect(self, host, port, username, password=None):
+    def connect(self, host, port, username, password=None, pygame_window=None):
         """Connect to VNC server."""
         if Client is None:
-            messagebox.showerror("Error", "pyVNC module not available!")
+            print("pyVNC module not available!")
             return False
 
         try:
@@ -28,16 +28,29 @@ class VNCConnector:
             self.disconnect()
 
             # Create new VNC client
-            self.vnc_client = Client(
-                host=host,
-                port=int(port),
-                password=password,
-                depth=32,
-                fast=True,
-                shared=True,
-                gui=True,
-                array=False
-            )
+            # If we have a pygame window, try to use it
+            if pygame_window:
+                self.vnc_client = Client(
+                    host=host,
+                    port=int(port),
+                    password=password,
+                    depth=32,
+                    fast=True,
+                    shared=True,
+                    gui=True,  # Let pyVNC handle the GUI
+                    array=False
+                )
+            else:
+                self.vnc_client = Client(
+                    host=host,
+                    port=int(port),
+                    password=password,
+                    depth=32,
+                    fast=True,
+                    shared=True,
+                    gui=True,
+                    array=False
+                )
 
             # Start connection in a separate thread
             self.connection_thread = Thread(target=self._run_vnc_client, daemon=True)
@@ -48,7 +61,6 @@ class VNCConnector:
 
         except Exception as e:
             print(f"Error connecting to VNC server: {e}")
-            messagebox.showerror("Connection Error", f"Failed to connect: {str(e)}")
             return False
 
     def _run_vnc_client(self):

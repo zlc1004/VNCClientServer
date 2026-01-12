@@ -5,14 +5,13 @@ A fullscreen application that shows a QR code to connect via web browser
 and provides VNC client functionality with settings management.
 """
 
-import tkinter as tk
 from threading import Thread
 import sys
 import os
 
 # pyVNC should be installed via pip install -e ./pyVNC/
 
-from gui_app import VNCQRApp
+from pygame_gui_app import PygameVNCQRApp
 from web_server import WebServer
 from config_manager import ConfigManager
 
@@ -36,21 +35,20 @@ def main():
         time.sleep(1)
         print("Web server started")
 
-        # Create and run GUI application
-        print("Creating GUI application...")
-        app = VNCQRApp(config_manager, web_server)
+        # Create and run Pygame GUI application
+        print("Creating Pygame GUI application...")
+        app = PygameVNCQRApp(config_manager, web_server)
 
         # Set shutdown callback for graceful shutdown from web interface
         def shutdown_application():
             print("Shutdown requested from web interface")
-            if hasattr(app, 'root') and app.root:
-                app.root.quit()  # Close GUI
-                app.root.destroy()
+            if hasattr(app, 'running'):
+                app.running = False  # Stop Pygame loop
             sys.exit(0)
 
         web_server.set_shutdown_callback(shutdown_application)
 
-        print("Starting GUI...")
+        print("Starting Pygame GUI...")
         app.run()
 
     except KeyboardInterrupt:
