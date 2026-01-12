@@ -46,9 +46,15 @@ if not exist "venv\Lib\site-packages\flask\" (
     )
 
     echo Installing pyVNC library...
-    pip install -e ./pyVNC/
-    if errorlevel 1 (
-        echo Failed to install pyVNC!
+    if exist "pyVNC\setup.py" (
+        pip install git+file:///%CD%/pyVNC
+        if errorlevel 1 (
+            echo Failed to install pyVNC!
+            pause
+            exit /b 1
+        )
+    ) else (
+        echo pyVNC setup.py not found! Make sure git submodules are properly initialized.
         pause
         exit /b 1
     )
