@@ -91,7 +91,16 @@ class PygameVNCQRApp:
 
             # Resize QR code to fit screen nicely
             qr_size = min(self.screen_width, self.screen_height) // 2
-            pil_img = pil_img.resize((qr_size, qr_size), Image.Resampling.NEAREST)
+            try:
+                # Try newer PIL versions first
+                pil_img = pil_img.resize((qr_size, qr_size), Image.Resampling.NEAREST)
+            except AttributeError:
+                # Fallback for older PIL versions
+                pil_img = pil_img.resize((qr_size, qr_size), Image.NEAREST)
+
+            # Convert PIL image to RGB mode to ensure compatibility
+            if pil_img.mode != 'RGB':
+                pil_img = pil_img.convert('RGB')
 
             # Convert PIL image to Pygame surface
             mode = pil_img.mode
@@ -108,15 +117,15 @@ class PygameVNCQRApp:
 
     def draw_qr_mode(self):
         """Draw the QR code interface."""
-        # Clear screen
-        self.screen.fill(self.BLACK)
+        # Clear screen with white background
+        self.screen.fill(self.WHITE)
 
         # Calculate positions
         center_x = self.screen_width // 2
         center_y = self.screen_height // 2
 
-        # Draw title
-        title_text = self.title_font.render("VNC QR Server", True, self.WHITE)
+        # Draw title in black
+        title_text = self.title_font.render("VNC QR Server", True, self.BLACK)
         title_rect = title_text.get_rect(center=(center_x, 80))
         self.screen.blit(title_text, title_rect)
 
@@ -124,23 +133,32 @@ class PygameVNCQRApp:
         if self.qr_image:
             qr_rect = self.qr_image.get_rect(center=(center_x, center_y - 50))
             self.screen.blit(self.qr_image, qr_rect)
+        else:
+            # If QR code generation failed, show error message
+            error_text = self.subtitle_font.render("QR Code Generation Failed", True, self.RED)
+            error_rect = error_text.get_rect(center=(center_x, center_y - 50))
+            self.screen.blit(error_text, error_rect)
 
-        # Draw URL text
+            # Draw a placeholder rectangle
+            placeholder_rect = pygame.Rect(center_x - 150, center_y - 150, 300, 300)
+            pygame.draw.rect(self.screen, self.RED, placeholder_rect, 3)
+
+        # Draw URL text in blue
         url_text = self.subtitle_font.render(f"Scan QR code or visit:", True, self.BLUE)
         url_rect = url_text.get_rect(center=(center_x, center_y + 200))
         self.screen.blit(url_text, url_rect)
 
-        url_value = self.subtitle_font.render(self.qr_url, True, self.WHITE)
+        url_value = self.subtitle_font.render(self.qr_url, True, self.BLACK)
         url_value_rect = url_value.get_rect(center=(center_x, center_y + 240))
         self.screen.blit(url_value, url_value_rect)
 
         # Draw status
-        status_color = self.GREEN if "connected" in self.status_text.lower() else self.WHITE
+        status_color = self.GREEN if "connected" in self.status_text.lower() else self.BLACK
         status = self.text_font.render(f"Status: {self.status_text}", True, status_color)
         status_rect = status.get_rect(center=(center_x, self.screen_height - 100))
         self.screen.blit(status, status_rect)
 
-        # Draw instructions
+        # Draw instructions in black
         instructions = [
             "1. Scan QR code with mobile device",
             "2. Enter VNC server details in web interface",
@@ -150,7 +168,7 @@ class PygameVNCQRApp:
 
         y_offset = self.screen_height - 200
         for i, instruction in enumerate(instructions):
-            text = self.text_font.render(instruction, True, self.WHITE)
+            text = self.text_font.render(instruction, True, self.BLACK)
             text_rect = text.get_rect(center=(center_x, y_offset + i * 30))
             self.screen.blit(text, text_rect)
 
@@ -188,7 +206,8 @@ class PygameVNCQRApp:
             self.vnc_scale = scale
 
         else:
-            # No VNC screen available yet, show placeholder
+            # No VNC screen available yet, show placeholder with white background
+            self.screen.fill(self.WHITE)
             center_x = self.screen_width // 2
             center_y = self.screen_height // 2
 
@@ -197,19 +216,19 @@ class PygameVNCQRApp:
             title_rect = title_text.get_rect(center=(center_x, center_y - 50))
             self.screen.blit(title_text, title_rect)
 
-            # Draw instructions
-            instruction1 = self.subtitle_font.render("Waiting for screen data...", True, self.WHITE)
+            # Draw instructions in black
+            instruction1 = self.subtitle_font.render("Waiting for screen data...", True, self.BLACK)
             instruction1_rect = instruction1.get_rect(center=(center_x, center_y + 20))
             self.screen.blit(instruction1, instruction1_rect)
 
-            instruction2 = self.text_font.render("Press ESC to disconnect", True, self.WHITE)
+            instruction2 = self.text_font.render("Press ESC to disconnect", True, self.BLACK)
             instruction2_rect = instruction2.get_rect(center=(center_x, center_y + 60))
             self.screen.blit(instruction2, instruction2_rect)
 
-        # Draw status at bottom
-        status = self.text_font.render(f"Status: {self.status_text}", True, self.GREEN)
-        status_rect = status.get_rect(center=(self.screen_width // 2, self.screen_height - 30))
-        self.screen.blit(status, status_rect)
+            # Draw status at bottom
+            status = self.text_font.render(f"Status: {self.status_text}", True, self.GREEN)
+            status_rect = status.get_rect(center=(center_x, self.screen_height - 30))
+            self.screen.blit(status, status_rect)
 
     def switch_to_vnc_mode(self):
         """Switch to VNC mode - let pyVNC take over the window."""
