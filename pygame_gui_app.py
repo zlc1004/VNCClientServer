@@ -237,13 +237,20 @@ class PygameVNCQRApp:
             self.screen.blit(status, status_rect)
 
     def switch_to_vnc_mode(self):
-        """Switch to VNC mode - let pyVNC take over the window."""
+        """Switch to VNC mode with proper state management."""
         print("Switching to VNC mode")
-        self.vnc_mode = True
-        self.status_text = "VNC Connected"
 
-        # Configure pyVNC to use our Pygame window
-        # This is where we'll let pyVNC take over
+        # Verify VNC connection is actually established
+        if not self.vnc_connector.is_connected():
+            print("Warning: Switching to VNC mode but no active connection detected")
+            self.status_text = "VNC Connecting..."
+        else:
+            print("VNC connection confirmed, enabling VNC mode")
+            self.status_text = "VNC Connected"
+
+        self.vnc_mode = True
+
+        # Configure VNC screen monitoring
         self.setup_vnc_takeover()
 
     def setup_vnc_takeover(self):
@@ -257,24 +264,46 @@ class PygameVNCQRApp:
             print(f"Error setting up VNC takeover: {e}")
 
     def _monitor_vnc_updates(self):
-        """Monitor VNC for screen updates."""
+        """Monitor VNC for screen updates without blocking."""
         print("Starting VNC screen monitoring...")
+        monitor_count = 0
+
         while self.vnc_mode and self.vnc_connector.is_connected():
             try:
                 time.sleep(0.1)  # Check for updates 10 times per second
+                monitor_count += 1
+
+                # Log status occasionally
+                if monitor_count % 50 == 0:  # Every 5 seconds
+                    print(f"VNC monitoring active: {monitor_count} cycles")
+
                 # The screen will be updated in the main draw loop
+                # No need to do anything blocking here
+
             except Exception as e:
                 print(f"Error in VNC monitoring: {e}")
                 break
 
+        print("VNC monitoring thread ended")
+
     def switch_to_qr_mode(self):
-        """Switch back to QR code mode."""
+        """Switch back to QR code mode with proper cleanup."""
         print("Switching to QR mode")
         self.vnc_mode = False
-        self.status_text = "Ready to connect"
+        self.status_text = "Disconnecting VNC..."
+
+        # Stop VNC monitoring thread
+        if hasattr(self, 'vnc_update_thread') and self.vnc_update_thread.is_alive():
+            print("Stopping VNC monitoring thread...")
+            # The thread will stop when vnc_mode becomes False
 
         # Disconnect VNC
-        self.vnc_handler.disconnect_vnc()
+        try:
+            self.vnc_handler.disconnect_vnc()
+            self.status_text = "Ready to connect"
+        except Exception as e:
+            print(f"Error during VNC disconnect: {e}")
+            self.status_text = "Disconnected (with errors)"
 
     def update_status(self, message):
         """Update status message."""
@@ -352,24 +381,40 @@ class PygameVNCQRApp:
             print(f"Error sending mouse to VNC: {e}")
 
     def run(self):
-        """Main application loop."""
+        """Main application loop with improved error handling."""
         print("Starting Pygame VNC QR Server...")
 
         while self.running:
-            # Handle events
-            self.handle_events()
+            try:
+                # Handle events (with timeout to prevent hanging)
+                self.handle_events()
 
-            # Draw current mode
-            if self.vnc_mode:
-                self.draw_vnc_mode()
-            else:
-                self.draw_qr_mode()
+                # Check VNC connection status and auto-disconnect if needed
+                if self.vnc_mode and self.vnc_connector and not self.vnc_connector.is_connected():
+                    print("VNC disconnected, returning to QR mode")
+                    self.switch_to_qr_mode()
 
-            # Update display
-            pygame.display.flip()
+                # Draw current mode
+                if self.vnc_mode:
+                    self.draw_vnc_mode()
+                else:
+                    self.draw_qr_mode()
 
-            # Control frame rate
-            self.clock.tick(60)
+                # Update display
+                pygame.display.flip()
+
+                # Control frame rate (prevent 100% CPU usage)
+                self.clock.tick(60)
+
+            except KeyboardInterrupt:
+                print("Keyboard interrupt received, shutting down...")
+                self.running = False
+                break
+
+            except Exception as e:
+                print(f"Error in main loop: {e}")
+                # Don't exit on errors, just continue
+                time.sleep(0.1)  # Brief pause to prevent error spam
 
         # Cleanup
         self.cleanup()

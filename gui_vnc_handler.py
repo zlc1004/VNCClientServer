@@ -37,25 +37,47 @@ class VNCHandler:
         return True
 
     def _connect_vnc_thread(self, ip, port, username, password):
-        """Connect to VNC in separate thread."""
+        """Connect to VNC in separate thread with proper timeout handling."""
         try:
+            # Update status to show connection attempt
+            self.update_status("Attempting VNC connection...")
+
             # Pass pygame screen surface if available
             pygame_surface = getattr(self.app, 'screen', None)
+
+            # Start connection attempt
             success = self.app.vnc_connector.connect(ip, port, username, password, pygame_surface)
 
             if success:
-                # Wait a moment for connection to establish
-                time.sleep(3)
-                # Switch to VNC mode
-                self.switch_to_vnc_mode()
-                self.app.web_server.notify_vnc_status('connected')
+                # Monitor connection establishment with timeout
+                connection_timeout = 15  # 15 seconds total timeout
+                check_interval = 0.5  # Check every 0.5 seconds
+                max_checks = int(connection_timeout / check_interval)
+
+                for i in range(max_checks):
+                    if self.app.vnc_connector.is_connected():
+                        # Connection established successfully
+                        print("VNC connection confirmed, switching to VNC mode")
+                        self.switch_to_vnc_mode()
+                        self.app.web_server.notify_vnc_status('connected')
+                        return
+
+                    self.update_status(f"Establishing connection... ({i+1}/{max_checks})")
+                    time.sleep(check_interval)
+
+                # Connection attempt timed out
+                print("VNC connection timed out")
+                self.update_status("VNC connection timed out")
+                self.app.web_server.notify_vnc_status('failed')
+
             else:
+                print("VNC connection failed immediately")
                 self.update_status("VNC connection failed")
                 self.app.web_server.notify_vnc_status('failed')
 
         except Exception as e:
             print(f"VNC connection error: {e}")
-            self.update_status(f"VNC error: {str(e)}")
+            self.update_status(f"VNC error: {str(e)[:50]}...")
             self.app.web_server.notify_vnc_status('failed')
 
     def switch_to_vnc_mode(self):
