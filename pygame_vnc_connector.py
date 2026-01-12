@@ -11,17 +11,16 @@ from PIL import Image
 import time
 
 try:
-    # Import pyVNC using the new safe import system
+    # Import pyVNC using the simplified import system
     import pyVNC
-    Client = pyVNC.Client
+    Client = pyVNC.get_client() if hasattr(pyVNC, 'get_client') else pyVNC.Client
 
     if Client is not None:
         print("✓ pyVNC imported successfully")
-        available_modules = pyVNC.get_available_modules() if hasattr(pyVNC, 'get_available_modules') else ['Client']
-        print(f"  Available modules: {', '.join(available_modules)}")
-
-        if hasattr(pyVNC, 'is_fully_available') and not pyVNC.is_fully_available():
-            print("  ⚠️ Some pyVNC modules had import issues, but Client is available")
+        if hasattr(pyVNC, 'is_available'):
+            print(f"  Client available: {pyVNC.is_available()}")
+        else:
+            print("  Client imported directly")
     else:
         print("❌ pyVNC.Client not available after import")
 
@@ -31,6 +30,7 @@ except ImportError as e:
     print("  - NumPy compatibility issues")
     print("  - Missing dependencies (twisted, numpy, pygame)")
     print("  - pyVNC not properly installed")
+    print("  - Circular import issues")
     print("VNC functionality will be disabled.")
     Client = None
 
