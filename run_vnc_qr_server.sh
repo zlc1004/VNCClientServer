@@ -5,7 +5,7 @@ echo ""
 
 # Check if conda environment exists
 if [ ! -d ".conda" ]; then
-    echo "❌ Conda environment not found at ./.conda"
+    echo "ERROR: Conda environment not found at ./.conda"
     echo "Please create conda environment first:"
     echo "conda create --prefix ./.conda python=3.10"
     exit 1
@@ -15,7 +15,7 @@ fi
 PYTHON_PATH="./.conda/bin/python"
 PIP_PATH="./.conda/bin/pip"
 
-echo "✅ Using conda environment at ./.conda"
+echo "SUCCESS: Using conda environment at ./.conda"
 echo "Python version: $($PYTHON_PATH --version)"
 
 # Git submodules no longer needed for VNC functionality
@@ -26,7 +26,7 @@ echo "Python version: $($PYTHON_PATH --version)"
 echo "Installing dependencies..."
 $PIP_PATH install -r requirements.txt
 if [ $? -ne 0 ]; then
-    echo "❌ Failed to install dependencies!"
+    echo "ERROR: Failed to install dependencies!"
     exit 1
 fi
 
@@ -45,7 +45,7 @@ clients_found = []
 system = platform.system()
 
 if system == 'Darwin':  # macOS
-    print('✅ macOS has built-in VNC support (Screen Sharing)')
+    print('SUCCESS: macOS has built-in VNC support (Screen Sharing)')
     clients_found.append('Built-in Screen Sharing')
 else:  # Linux
     # Check common VNC clients
@@ -55,14 +55,14 @@ else:  # Linux
             clients_found.append(client)
 
 if clients_found:
-    print('✅ VNC clients found:')
+    print('SUCCESS: VNC clients found:')
     for client in clients_found:
         print(f'  - {client}')
     print()
-    print('✅ VNC functionality will be available')
+    print('SUCCESS: VNC functionality will be available')
 else:
     if system == 'Linux':
-        print('❌ No VNC clients detected')
+        print('ERROR: No VNC clients detected')
         print('VNC functionality will be limited to QR code display only')
         print()
         print('To enable VNC connections, please install one of the following:')
@@ -77,13 +77,13 @@ print()
 "
 
 if [ $? -ne 0 ]; then
-    echo "❌ Failed to check VNC clients!"
+    echo "ERROR: Failed to check VNC clients!"
     exit 1
 fi
 
 # Start the application
 echo ""
-echo "🚀 Starting VNC QR Server Application..."
+echo "Starting VNC QR Server Application..."
 echo "Press Ctrl+C to stop the server"
 echo ""
 

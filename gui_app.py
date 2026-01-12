@@ -113,13 +113,13 @@ class VNCQRApp:
                 print("Available VNC clients:")
                 for client in available_clients:
                     if isinstance(client, dict):
-                        password_support = "✓" if client.get('supports_password') else "✗"
+                        password_support = "YES" if client.get('supports_password') else "NO"
                         print(f"  - {client['name']} (Password: {password_support})")
                     else:
                         print(f"  - {client}")
             else:
                 info_text = "No VNC clients detected - Install a VNC client"
-                print("⚠️ No VNC clients found on system")
+                print("WARNING: No VNC clients found on system")
                 print("Please install one of the following:")
                 print("  Windows: TightVNC, RealVNC Viewer, UltraVNC")
                 print("  macOS: Built-in Screen Sharing (vnc:// URLs)")

@@ -270,7 +270,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🖥️ VNC Remote Control</h1>
+            <h1>VNC Remote Control</h1>
             <div class="ip-info">
                 Connected to: {{ local_ip }}:8080
             </div>
@@ -285,7 +285,7 @@
 
         <!-- VNC Connection Section -->
         <div class="section" id="vncSection">
-            <h2>🔗 Connect to VNC Server</h2>
+            <h2>Connect to VNC Server</h2>
             <form id="vncForm">
                 <div class="form-row">
                     <div class="form-group">
@@ -326,15 +326,15 @@
                     <label for="fullscreenMode">Fullscreen VNC client (Windows only - removes title bar, always on top)</label>
                 </div>
                 <div class="button-group">
-                    <button type="submit" class="btn btn-success" id="connectBtn">🚀 Connect to VNC</button>
-                    <button type="button" class="btn btn-danger" id="disconnectBtn" onclick="disconnectVNC()" style="display: none;">❌ Disconnect</button>
-                    <button type="button" class="btn btn-secondary" onclick="shutdownServer()">🔴 Shutdown Server</button>
+                    <button type="submit" class="btn btn-success" id="connectBtn">Connect to VNC</button>
+                    <button type="button" class="btn btn-danger" id="disconnectBtn" onclick="disconnectVNC()" style="display: none;">Disconnect</button>
+                    <button type="button" class="btn btn-secondary" onclick="shutdownServer()">Shutdown Server</button>
                 </div>
             </form>
 
             <!-- Saved Servers -->
             <div class="saved-servers" id="savedServers">
-                <h3>💾 Saved Servers</h3>
+                <h3>Saved Servers</h3>
                 <div id="savedServersList">
                     {% for server in saved_servers %}
                     <div class="server-item">
@@ -343,8 +343,8 @@
                             <small>Username: {{ server.username }}</small>
                         </div>
                         <div class="server-actions">
-                            <button class="btn btn-primary btn-sm" onclick="loadServer('{{ server.ip }}', {{ server.port }}, '{{ server.username }}')">📥 Load</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteServer('{{ server.ip }}', {{ server.port }})">🗑️ Delete</button>
+                            <button class="btn btn-primary btn-sm" onclick="loadServer('{{ server.ip }}', {{ server.port }}, '{{ server.username }}')">Load</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteServer('{{ server.ip }}', {{ server.port }})">Delete</button>
                         </div>
                     </div>
                     {% endfor %}
@@ -354,14 +354,14 @@
 
         <!-- Connected State -->
         <div class="section" id="connectedSection" style="display: none;">
-            <h2>🖥��� VNC Connected</h2>
+            <h2>VNC Connected</h2>
             <div class="alert alert-success">
                 <strong>VNC session is active on the desktop!</strong><br>
                 Use the desktop application to interact with the remote computer.
             </div>
             <div class="button-group">
-                <button type="button" class="btn btn-danger" onclick="disconnectVNC()">❌ Disconnect VNC</button>
-                <button type="button" class="btn btn-secondary" onclick="shutdownServer()">🔴 Shutdown Server</button>
+                <button type="button" class="btn btn-danger" onclick="disconnectVNC()">Disconnect VNC</button>
+                <button type="button" class="btn btn-secondary" onclick="shutdownServer()">Shutdown Server</button>
             </div>
         </div>
 

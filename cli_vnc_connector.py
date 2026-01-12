@@ -37,7 +37,7 @@ class CLIVNCConnector:
             vnc_command = self._get_vnc_command(host, port, username, password, selected_client)
 
             if not vnc_command:
-                print("❌ Selected VNC client not available or no suitable client found")
+                print("ERROR: Selected VNC client not available or no suitable client found")
                 return False
 
             print(f"Starting VNC client: {' '.join(vnc_command[:3])}...")
@@ -63,7 +63,7 @@ class CLIVNCConnector:
             # Check if process is still running
             if self.vnc_process.poll() is None:
                 self.connected = True
-                print("✓ VNC client started successfully")
+                print("SUCCESS: VNC client started successfully")
 
                 # Apply fullscreen modifications if requested (Windows only)
                 if self.fullscreen_mode and platform.system() == "Windows":
@@ -76,7 +76,7 @@ class CLIVNCConnector:
 
                 return True
             else:
-                print("❌ VNC client failed to start")
+                print("ERROR: VNC client failed to start")
                 stdout, stderr = self.vnc_process.communicate()
                 if stderr:
                     print(f"Error: {stderr.decode().strip()}")
@@ -335,10 +335,10 @@ class CLIVNCConnector:
             # Maximize the window (fullscreen)
             main_window.maximize()
 
-            print("✓ VNC client window: fullscreen, always on top, no title bar!")
+            print("SUCCESS: VNC client window: fullscreen, always on top, no title bar!")
 
         except ImportError:
-            print("⚠️ pywinauto or pywin32 not installed - fullscreen mode unavailable")
+            print("WARNING: pywinauto or pywin32 not installed - fullscreen mode unavailable")
         except Exception as e:
             print(f"Error applying fullscreen modifications: {e}")
 

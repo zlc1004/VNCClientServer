@@ -166,5 +166,5 @@ class WebServer:
                 print(f"Failed {host}:{port} - {e}")
                 continue
         else:
-            print("❌ Could not start web server on any host/port combination")
+            print("ERROR: Could not start web server on any host/port combination")
             print("Web interface will not be available")

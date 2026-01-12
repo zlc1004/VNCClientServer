@@ -102,13 +102,13 @@ echo if shutil.which('tvnviewer.exe'^): >> temp_vnc_check.py
 echo     clients_found.append('TightVNC Viewer in PATH'^) >> temp_vnc_check.py
 echo. >> temp_vnc_check.py
 echo if clients_found: >> temp_vnc_check.py
-echo     print('✅ VNC clients found:'^) >> temp_vnc_check.py
+echo     print('SUCCESS: VNC clients found:'^) >> temp_vnc_check.py
 echo     for client in clients_found: >> temp_vnc_check.py
 echo         print(f'  - {client}'^) >> temp_vnc_check.py
 echo     print(^) >> temp_vnc_check.py
-echo     print('✅ VNC functionality will be available'^) >> temp_vnc_check.py
+echo     print('SUCCESS: VNC functionality will be available'^) >> temp_vnc_check.py
 echo else: >> temp_vnc_check.py
-echo     print('❌ No VNC clients detected'^) >> temp_vnc_check.py
+echo     print('ERROR: No VNC clients detected'^) >> temp_vnc_check.py
 echo     print('VNC functionality will be limited to QR code display only'^) >> temp_vnc_check.py
 echo     print(^) >> temp_vnc_check.py
 echo     print('To enable VNC connections, please install one of the following:'^) >> temp_vnc_check.py
