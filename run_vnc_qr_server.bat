@@ -36,7 +36,7 @@ REM Using explicit venv paths instead of activation
 REM Install requirements if they don't exist
 if not exist "venv\Lib\site-packages\flask\" (
     echo Installing dependencies...
-    ./venv/Scripts/pip.exe install -r requirements.txt
+    .\venv\Scripts\pip.exe install -r requirements.txt
     if errorlevel 1 (
         echo Failed to install dependencies!
         pause
@@ -45,7 +45,7 @@ if not exist "venv\Lib\site-packages\flask\" (
 
     echo Installing pyVNC library...
     if exist "pyVNC\setup.py" (
-        ./venv/Scripts/pip.exe install git+file:///%CD%/pyVNC
+        .\venv\Scripts\pip.exe install git+file:///%CD%/pyVNC
         if errorlevel 1 (
             echo Failed to install pyVNC!
             pause
@@ -63,6 +63,6 @@ echo.
 echo Starting VNC QR Server Application...
 echo Press Ctrl+C to stop the server
 echo.
-./venv/Scripts/python.exe main.py
+.\venv\Scripts\python.exe main.py
 
 pause
