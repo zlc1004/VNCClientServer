@@ -58,11 +58,13 @@ if exist "pyVNC\setup.py" (
     )
 
     echo Testing pyVNC import...
-    .\venv\Scripts\python.exe -c "from pyVNC.Client import Client; print('pyVNC import test successful')" >nul 2>&1
+    .\venv\Scripts\python.exe -c "from pyVNC.Client import Client; print('✓ pyVNC import test successful')" 2>nul
     if errorlevel 1 (
-        echo Warning: pyVNC import test failed - VNC functionality may be limited
-        echo Run 'python debug_vnc_imports.py' for detailed diagnostics
+        echo ⚠ Warning: pyVNC import test failed - VNC functionality may be limited
+        echo Run '.\venv\Scripts\python.exe test_windows_imports.py' for detailed diagnostics
         echo The application will start with QR code functionality only
+    ) else (
+        echo ✓ pyVNC imports working correctly - Full VNC functionality enabled
     )
 ) else (
     echo pyVNC setup.py not found! Make sure git submodules are properly initialized.

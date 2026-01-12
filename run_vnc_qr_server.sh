@@ -52,8 +52,10 @@ echo "Testing pyVNC import..."
 $PYTHON_PATH -c "from pyVNC.Client import Client; print('✓ pyVNC import test successful')" 2>/dev/null
 if [ $? -ne 0 ]; then
     echo "⚠️ Warning: pyVNC import test failed - VNC functionality may be limited"
-    echo "Run 'python debug_vnc_imports.py' for detailed diagnostics"
+    echo "Run '$PYTHON_PATH debug_vnc_imports.py' for detailed diagnostics"
     echo "The application will start with QR code functionality only"
+else
+    echo "✅ pyVNC imports working correctly - Full VNC functionality enabled"
 fi
 
 # Start the application
