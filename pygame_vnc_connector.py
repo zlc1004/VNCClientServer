@@ -11,44 +11,31 @@ from PIL import Image
 import time
 
 try:
-    # Try multiple import approaches for pyVNC
+    # Import pyVNC using the new safe import system
+    import pyVNC
+    Client = pyVNC.Client
+
+    if Client is not None:
+        print("✓ pyVNC imported successfully")
+        available_modules = pyVNC.get_available_modules() if hasattr(pyVNC, 'get_available_modules') else ['Client']
+        print(f"  Available modules: {', '.join(available_modules)}")
+
+        if hasattr(pyVNC, 'is_fully_available') and not pyVNC.is_fully_available():
+            print("  ⚠️ Some pyVNC modules had import issues, but Client is available")
+    else:
+        print("❌ pyVNC.Client not available after import")
+
+except ImportError as e:
+    print(f"❌ pyVNC package import failed: {e}")
+    print("This might be due to:")
+    print("  - NumPy compatibility issues")
+    print("  - Missing dependencies (twisted, numpy, pygame)")
+    print("  - pyVNC not properly installed")
+    print("VNC functionality will be disabled.")
     Client = None
-    import_errors = []
-
-    # Approach 1: Standard import
-    try:
-        from pyVNC.Client import Client
-        print("✓ pyVNC imported successfully (standard import)")
-    except ImportError as e:
-        import_errors.append(f"Standard import failed: {e}")
-
-        # Approach 2: Try direct path import
-        try:
-            import sys
-            import os
-            # Add pyVNC to path if not already there
-            pyvnc_path = os.path.join(os.getcwd(), 'pyVNC')
-            if pyvnc_path not in sys.path:
-                sys.path.insert(0, pyvnc_path)
-
-            from pyVNC.Client import Client
-            print("✓ pyVNC imported successfully (path import)")
-        except Exception as e2:
-            import_errors.append(f"Path import failed: {e2}")
-
-    if Client is None:
-        print("❌ pyVNC module not available!")
-        print("Import errors encountered:")
-        for i, error in enumerate(import_errors, 1):
-            print(f"  {i}. {error}")
-        print("\nThis might be due to:")
-        print("  - NumPy compatibility issues")
-        print("  - Missing dependencies (twisted, numpy, pygame)")
-        print("  - pyVNC not properly installed")
-        print("\nTrying to continue without VNC functionality...")
 
 except Exception as e:
-    print(f"Unexpected error importing pyVNC: {e}")
+    print(f"❌ Unexpected error importing pyVNC: {e}")
     Client = None
 
 class PygameVNCConnector:
