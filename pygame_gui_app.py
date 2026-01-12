@@ -311,48 +311,66 @@ class PygameVNCQRApp:
         print(f"Status: {message}")
 
     def handle_events(self):
-        """Handle Pygame events."""
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
+        """Handle Pygame events with improved error handling."""
+        try:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
 
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    if self.vnc_mode:
-                        self.switch_to_qr_mode()
-                    else:
-                        self.running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        if self.vnc_mode:
+                            self.switch_to_qr_mode()
+                        else:
+                            self.running = False
 
-                # Pass other keys to VNC if in VNC mode
-                elif self.vnc_mode and self.vnc_connector.is_connected():
-                    # Convert pygame key to VNC key and send
-                    self.send_key_to_vnc(event.key)
+                    # Pass other keys to VNC if in VNC mode
+                    elif self.vnc_mode and self.vnc_connector and self.vnc_connector.is_connected():
+                        try:
+                            # Convert pygame key to VNC key and send
+                            self.send_key_to_vnc(event.key)
+                        except Exception as e:
+                            print(f"Error sending key to VNC: {e}")
+                            # Don't disconnect on key errors, just log them
 
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if self.vnc_mode and self.vnc_connector.is_connected():
-                    # Send mouse click to VNC
-                    x, y = event.pos
-                    button = event.button
-                    self.send_mouse_to_vnc(x, y, button)
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.vnc_mode and self.vnc_connector and self.vnc_connector.is_connected():
+                        try:
+                            # Send mouse click to VNC
+                            x, y = event.pos
+                            button = event.button
+                            self.send_mouse_to_vnc(x, y, button)
+                        except Exception as e:
+                            print(f"Error sending mouse click to VNC: {e}")
 
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if self.vnc_mode and self.vnc_connector.is_connected():
-                    # Send mouse release to VNC
-                    x, y = event.pos
-                    # Send mouse up event (button mask 0)
-                    if hasattr(self, 'vnc_display_rect') and hasattr(self, 'vnc_scale'):
-                        vnc_x = int((x - self.vnc_display_rect.x) / self.vnc_scale)
-                        vnc_y = int((y - self.vnc_display_rect.y) / self.vnc_scale)
-                        self.vnc_connector.send_mouse_event(vnc_x, vnc_y, 0)
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    if self.vnc_mode and self.vnc_connector and self.vnc_connector.is_connected():
+                        try:
+                            # Send mouse release to VNC
+                            x, y = event.pos
+                            # Send mouse up event (button mask 0)
+                            if hasattr(self, 'vnc_display_rect') and hasattr(self, 'vnc_scale'):
+                                vnc_x = int((x - self.vnc_display_rect.x) / self.vnc_scale)
+                                vnc_y = int((y - self.vnc_display_rect.y) / self.vnc_scale)
+                                self.vnc_connector.send_mouse_event(vnc_x, vnc_y, 0)
+                        except Exception as e:
+                            print(f"Error sending mouse release to VNC: {e}")
 
-            elif event.type == pygame.MOUSEMOTION:
-                if self.vnc_mode and self.vnc_connector.is_connected():
-                    # Send mouse movement to VNC
-                    x, y = event.pos
-                    if hasattr(self, 'vnc_display_rect') and hasattr(self, 'vnc_scale'):
-                        vnc_x = int((x - self.vnc_display_rect.x) / self.vnc_scale)
-                        vnc_y = int((y - self.vnc_display_rect.y) / self.vnc_scale)
-                        self.vnc_connector.send_mouse_event(vnc_x, vnc_y, 0)
+                elif event.type == pygame.MOUSEMOTION:
+                    if self.vnc_mode and self.vnc_connector and self.vnc_connector.is_connected():
+                        try:
+                            # Send mouse movement to VNC
+                            x, y = event.pos
+                            if hasattr(self, 'vnc_display_rect') and hasattr(self, 'vnc_scale'):
+                                vnc_x = int((x - self.vnc_display_rect.x) / self.vnc_scale)
+                                vnc_y = int((y - self.vnc_display_rect.y) / self.vnc_scale)
+                                self.vnc_connector.send_mouse_event(vnc_x, vnc_y, 0)
+                        except Exception as e:
+                            print(f"Error sending mouse movement to VNC: {e}")
+
+        except Exception as e:
+            print(f"Error in event handling: {e}")
+            # Continue processing events even if one fails
 
     def send_key_to_vnc(self, pygame_key):
         """Convert Pygame key to VNC key and send."""
