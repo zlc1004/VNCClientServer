@@ -20,8 +20,9 @@ class CLIVNCConnector:
         self.port = None
         self.selected_client = None
         self.client_executable = None
+        self.fullscreen_mode = False
 
-    def connect(self, host, port, username, password=None, selected_client=None):
+    def connect(self, host, port, username, password=None, selected_client=None, fullscreen=False):
         """Connect to VNC server using selected VNC client."""
         try:
             # Stop any existing connection
@@ -30,6 +31,7 @@ class CLIVNCConnector:
             self.host = host
             self.port = port
             self.selected_client = selected_client
+            self.fullscreen_mode = fullscreen
 
             # Get the appropriate VNC client command
             vnc_command = self._get_vnc_command(host, port, username, password, selected_client)
@@ -62,6 +64,11 @@ class CLIVNCConnector:
             if self.vnc_process.poll() is None:
                 self.connected = True
                 print("✓ VNC client started successfully")
+
+                # Apply fullscreen modifications if requested (Windows only)
+                if self.fullscreen_mode and platform.system() == "Windows":
+                    fullscreen_thread = Thread(target=self._apply_fullscreen_modifications, daemon=True)
+                    fullscreen_thread.start()
 
                 # Monitor VNC client in background
                 monitor_thread = Thread(target=self._monitor_vnc_client, daemon=True)
@@ -162,8 +169,8 @@ class CLIVNCConnector:
             client = clients[selected_client]
             return self._try_client(client)
 
-        # Otherwise try all clients in order of preference
-        for client_key in ['tightvnc', 'tigervnc', 'realvnc', 'ultravnc']:
+        # Otherwise try all clients in order of preference (TigerVNC first)
+        for client_key in ['tigervnc', 'tightvnc', 'realvnc', 'ultravnc']:
             client = clients[client_key]
             result = self._try_client(client)
             if result:
@@ -286,6 +293,54 @@ class CLIVNCConnector:
                 return [client['executable']] + client['args']
 
         return None
+
+    def _apply_fullscreen_modifications(self):
+        """Apply fullscreen, always-on-top, and borderless modifications to VNC client window."""
+        try:
+            # Only run on Windows
+            if platform.system() != "Windows":
+                print("Fullscreen modifications only supported on Windows")
+                return
+
+            # Import Windows-specific modules
+            import win32con
+            import win32gui
+            from pywinauto.application import Application
+
+            print("Applying fullscreen modifications to VNC client...")
+            time.sleep(3)  # Wait for VNC window to appear
+
+            # Connect to the running VNC process
+            app = Application(backend="win32").connect(process=self.vnc_process.pid)
+
+            # Get the main window
+            main_window = app.top_window()
+            hwnd = main_window.handle
+
+            print(f"Found VNC window handle: {hwnd}")
+
+            # Remove title bar and borders
+            current_style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
+            new_style = current_style & ~win32con.WS_CAPTION & ~win32con.WS_THICKFRAME
+            win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE, new_style)
+
+            # Set window to always on top
+            win32gui.SetWindowPos(
+                hwnd,
+                win32con.HWND_TOPMOST,
+                0, 0, 0, 0,
+                win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_FRAMECHANGED
+            )
+
+            # Maximize the window (fullscreen)
+            main_window.maximize()
+
+            print("✓ VNC client window: fullscreen, always on top, no title bar!")
+
+        except ImportError:
+            print("⚠️ pywinauto or pywin32 not installed - fullscreen mode unavailable")
+        except Exception as e:
+            print(f"Error applying fullscreen modifications: {e}")
 
     def _monitor_vnc_client(self):
         """Monitor VNC client process."""
@@ -424,7 +479,12 @@ class CLIVNCConnector:
                 }
             }
 
-            for client_id, client_info in clients.items():
+            # Check clients in preferred order (TigerVNC first)
+            for client_id in ['tigervnc', 'tightvnc', 'realvnc', 'ultravnc']:
+                if client_id not in clients:
+                    continue
+
+                client_info = clients[client_id]
                 client_found = False
 
                 # Special handling for TigerVNC with search patterns

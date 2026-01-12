@@ -5,5 +5,7 @@ requests>=2.25.0
 psutil>=5.8.0
 flask-socketio>=5.3.0
 python-socketio>=5.8.0
+pywinauto>=0.6.8
+pywin32>=306
 # VNC functionality now uses system VNC clients instead of pyVNC
 # No need for pygame, numpy, twisted, or service_identity

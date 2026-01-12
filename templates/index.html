@@ -321,6 +321,10 @@
                     <input type="checkbox" id="saveServer" name="saveServer">
                     <label for="saveServer">Save this server configuration</label>
                 </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="fullscreenMode" name="fullscreenMode">
+                    <label for="fullscreenMode">Fullscreen VNC client (Windows only - removes title bar, always on top)</label>
+                </div>
                 <div class="button-group">
                     <button type="submit" class="btn btn-success" id="connectBtn">🚀 Connect to VNC</button>
                     <button type="button" class="btn btn-danger" id="disconnectBtn" onclick="disconnectVNC()" style="display: none;">❌ Disconnect</button>
@@ -350,7 +354,7 @@
 
         <!-- Connected State -->
         <div class="section" id="connectedSection" style="display: none;">
-            <h2>🖥️ VNC Connected</h2>
+            <h2>🖥��� VNC Connected</h2>
             <div class="alert alert-success">
                 <strong>VNC session is active on the desktop!</strong><br>
                 Use the desktop application to interact with the remote computer.
@@ -454,7 +458,8 @@
                 username: formData.get('username'),
                 password: formData.get('password'),
                 client: formData.get('client') || null,
-                save_server: formData.has('saveServer')
+                save_server: formData.has('saveServer'),
+                fullscreen: formData.has('fullscreenMode')
             };
 
             // Show connecting status

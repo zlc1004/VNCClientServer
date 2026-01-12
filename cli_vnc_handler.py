@@ -21,6 +21,7 @@ class CLIVNCHandler:
         username = vnc_data.get('username')
         password = vnc_data.get('password', '')
         selected_client = vnc_data.get('client')  # Get selected VNC client
+        fullscreen = vnc_data.get('fullscreen', False)  # Get fullscreen option
 
         if not all([ip, port, username]):
             print("Invalid VNC connection data")
@@ -33,17 +34,17 @@ class CLIVNCHandler:
 
         # Start VNC connection in separate thread
         vnc_thread = threading.Thread(target=self._connect_vnc_thread,
-                                     args=(ip, port, username, password, selected_client))
+                                     args=(ip, port, username, password, selected_client, fullscreen))
         vnc_thread.daemon = True
         vnc_thread.start()
 
         return True
 
-    def _connect_vnc_thread(self, ip, port, username, password, selected_client=None):
+    def _connect_vnc_thread(self, ip, port, username, password, selected_client=None, fullscreen=False):
         """Connect to VNC in separate thread."""
         try:
-            # Attempt connection with selected client
-            success = self.app.vnc_connector.connect(ip, port, username, password, selected_client)
+            # Attempt connection with selected client and fullscreen option
+            success = self.app.vnc_connector.connect(ip, port, username, password, selected_client, fullscreen)
 
             if success:
                 # Connection successful - hide QR window
